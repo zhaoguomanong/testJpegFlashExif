@@ -6,16 +6,22 @@ if [ $? != 0 ];then
     sudo apt-get install -y jhead
 fi
 
+photoPath="$1"
+
+if [ -z "$photoPath" ] || [ ! -d "$photoPath" ] ;then
+    photoPath="."
+fi
+
 
 photos=()
-photos=$(find . -name "*.jpg")
+photos=$(find "$photoPath" -name "*.jpg")
 
 failed=0
 count=0
 failedList=()
 for photo in $(echo -ne "$photos")
 do
-    photoName=$(echo "$photo" | sed 's/\.\///g')
+    photoName=$(basename "$photo")
     ((count++))
     flashStatus=$(jhead ${photo}  \
     | grep -iE 'Flash used' \
@@ -29,8 +35,14 @@ do
     echo "$photoName ---> $flashStatus"
 
 done
+if [ "$count" != 0 ];then
+    failedRate=$(echo "$failed" "$count" \
+    | awk '{printf ("%.2f\n", 100*$1/$2)}')
+else
+    failedRate="0"
+fi
 
-echo "photo amount = $count, failed num = $failed"
+echo "photo amount = $count, failed num = $failed, failed rate = $failedRate%"
 
 
 echo "======[failed List as below]======"
